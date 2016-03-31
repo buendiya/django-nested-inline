@@ -248,6 +248,18 @@ class NestedModelAdmin(admin.ModelAdmin):
         context.update(extra_context or {})
         return self.render_change_form(request, context, form_url=form_url, add=True)
 
+    def get_inline_formsets(self, request, formsets, inline_instances,
+                            obj=None):
+        inline_admin_formsets = []
+        for inline, formset in zip(inline_instances, formsets):
+            fieldsets = list(inline.get_fieldsets(request, obj))
+            readonly = list(inline.get_readonly_fields(request, obj))
+            prepopulated = dict(inline.get_prepopulated_fields(request, obj))
+            inline_admin_formset = helpers.InlineAdminFormSet(inline, formset,
+                fieldsets, prepopulated, readonly, model_admin=self)
+            inline_admin_formsets.append(inline_admin_formset)
+        return inline_admin_formsets
+    
     @csrf_protect_m
     @transaction.atomic
     def change_view(self, request, object_id, form_url='', extra_context=None):
@@ -319,15 +331,10 @@ class NestedModelAdmin(admin.ModelAdmin):
             model_admin=self)
         media = self.media + adminForm.media
 
-        inline_admin_formsets = []
-        for inline, formset in zip(inline_instances, formsets):
-            fieldsets = list(inline.get_fieldsets(request, obj))
-            readonly = list(inline.get_readonly_fields(request, obj))
-            prepopulated = dict(inline.get_prepopulated_fields(request, obj))
-            inline_admin_formset = helpers.InlineAdminFormSet(inline, formset,
-                fieldsets, prepopulated, readonly, model_admin=self)
-            inline_admin_formsets.append(inline_admin_formset)
+        inline_admin_formsets = self.get_inline_formsets(request, formsets, inline_instances, obj)
+        for inline_admin_formset in inline_admin_formsets:
             media = media + inline_admin_formset.media
+            inline = inline_admin_formset.opts
             if hasattr(inline, 'inlines') and inline.inlines:
                 media += self.wrap_nested_inline_formsets(request, inline, formset)
 
