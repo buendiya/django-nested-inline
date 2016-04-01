@@ -256,7 +256,7 @@ class NestedModelAdmin(admin.ModelAdmin):
             readonly = list(inline.get_readonly_fields(request, obj))
             prepopulated = dict(inline.get_prepopulated_fields(request, obj))
             inline_admin_formset = helpers.InlineAdminFormSet(inline, formset,
-                fieldsets, prepopulated, readonly, model_admin=self)
+                                                              fieldsets, prepopulated, readonly, model_admin=self)
             inline_admin_formsets.append(inline_admin_formset)
         return inline_admin_formsets
     
@@ -335,6 +335,7 @@ class NestedModelAdmin(admin.ModelAdmin):
         for inline_admin_formset in inline_admin_formsets:
             media = media + inline_admin_formset.media
             inline = inline_admin_formset.opts
+            formset = inline_admin_formset.formset
             if hasattr(inline, 'inlines') and inline.inlines:
                 media += self.wrap_nested_inline_formsets(request, inline, formset)
 
